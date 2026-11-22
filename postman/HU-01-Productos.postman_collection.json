@@ -1,0 +1,73 @@
+{
+  "info": {
+    "name": "HU-01 Microservicio Productos",
+    "description": "Colección para probar el CRUD y el manejo de errores del microservicio de productos.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api/v1/productos" },
+    { "key": "id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 Crear producto (201)",
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Status 201', () => pm.response.to.have.status(201));",
+        "pm.collectionVariables.set('id', pm.response.json().id);"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}",
+        "body": { "mode": "raw", "raw": "{\n  \"codigo\": \"ELE-0001\",\n  \"nombre\": \"Multímetro digital\",\n  \"descripcion\": \"Medición de voltaje AC/DC, corriente y resistencia\",\n  \"categoria\": \"Electrónica\",\n  \"precio\": 499.90,\n  \"stock\": 25\n}" }
+      }
+    },
+    {
+      "name": "02 Listar productos (200)",
+      "request": { "method": "GET", "url": "{{baseUrl}}" }
+    },
+    {
+      "name": "03 Listar por categoría (200)",
+      "request": { "method": "GET", "url": { "raw": "{{baseUrl}}?categoria=electrónica", "host": ["{{baseUrl}}"], "query": [{ "key": "categoria", "value": "electrónica" }] } }
+    },
+    {
+      "name": "04 Consultar por id (200)",
+      "request": { "method": "GET", "url": "{{baseUrl}}/{{id}}" }
+    },
+    {
+      "name": "05 Actualizar producto (200)",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/{{id}}",
+        "body": { "mode": "raw", "raw": "{\n  \"codigo\": \"ELE-0001\",\n  \"nombre\": \"Multímetro digital True RMS\",\n  \"descripcion\": \"Versión con medición True RMS\",\n  \"categoria\": \"Electrónica\",\n  \"precio\": 649.00,\n  \"stock\": 18,\n  \"activo\": true\n}" }
+      }
+    },
+    {
+      "name": "06 Error 400 - datos inválidos",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}",
+        "body": { "mode": "raw", "raw": "{\n  \"codigo\": \"abc\",\n  \"nombre\": \"\",\n  \"categoria\": \"\",\n  \"precio\": -5,\n  \"stock\": -1\n}" }
+      }
+    },
+    {
+      "name": "07 Error 409 - código duplicado",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}",
+        "body": { "mode": "raw", "raw": "{\n  \"codigo\": \"ELE-0001\",\n  \"nombre\": \"Otro multímetro\",\n  \"categoria\": \"Electrónica\",\n  \"precio\": 300,\n  \"stock\": 5\n}" }
+      }
+    },
+    {
+      "name": "08 Error 404 - id inexistente",
+      "request": { "method": "GET", "url": "{{baseUrl}}/000000000000000000000000" }
+    },
+    {
+      "name": "09 Eliminar producto (204)",
+      "request": { "method": "DELETE", "url": "{{baseUrl}}/{{id}}" }
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProductoService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">microservicio-productos</a> &gt; <a href="index.source.html" class="el_package">mx.edu.utch.productos.service</a> &gt; <span class="el_source">ProductoService.java</span></div><h1>ProductoService.java</h1><pre class="source lang-java linenums">package mx.edu.utch.productos.service;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.util.List;
+import java.util.Locale;
+
+import org.springframework.stereotype.Service;
+
+import mx.edu.utch.productos.dto.ProductoRequest;
+import mx.edu.utch.productos.dto.ProductoResponse;
+import mx.edu.utch.productos.exception.DatoDuplicadoException;
+import mx.edu.utch.productos.exception.RecursoNoEncontradoException;
+import mx.edu.utch.productos.model.Producto;
+import mx.edu.utch.productos.repository.ProductoRepository;
+
+/**
+ * Lógica de negocio del CRUD de productos.
+ */
+@Service
+public class ProductoService {
+
+    static final String RECURSO = &quot;Producto&quot;;
+    static final String CAMPO_CODIGO = &quot;código&quot;;
+
+    private final ProductoRepository repositorio;
+    private final Clock reloj;
+
+<span class="fc" id="L29">    public ProductoService(ProductoRepository repositorio, Clock reloj) {</span>
+<span class="fc" id="L30">        this.repositorio = repositorio;</span>
+<span class="fc" id="L31">        this.reloj = reloj;</span>
+<span class="fc" id="L32">    }</span>
+
+    public ProductoResponse crear(ProductoRequest solicitud) {
+<span class="fc" id="L35">        String codigo = normalizarCodigo(solicitud.codigo());</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (repositorio.existsByCodigo(codigo)) {</span>
+<span class="fc" id="L37">            throw new DatoDuplicadoException(CAMPO_CODIGO, codigo);</span>
+        }
+<span class="fc" id="L39">        Producto producto = new Producto();</span>
+<span class="fc" id="L40">        Instant ahora = Instant.now(reloj);</span>
+<span class="fc" id="L41">        producto.setFechaCreacion(ahora);</span>
+<span class="fc" id="L42">        aplicarCambios(producto, solicitud, codigo, ahora);</span>
+<span class="fc" id="L43">        return ProductoResponse.desde(repositorio.save(producto));</span>
+    }
+
+    public List&lt;ProductoResponse&gt; listar(String categoria) {
+<span class="fc bfc" id="L47" title="All 4 branches covered.">        List&lt;Producto&gt; productos = (categoria == null || categoria.isBlank())</span>
+<span class="fc" id="L48">                ? repositorio.findAll()</span>
+<span class="fc" id="L49">                : repositorio.findByCategoriaIgnoreCase(categoria.trim());</span>
+<span class="fc" id="L50">        return productos.stream().map(ProductoResponse::desde).toList();</span>
+    }
+
+    public ProductoResponse obtenerPorId(String id) {
+<span class="fc" id="L54">        return ProductoResponse.desde(buscar(id));</span>
+    }
+
+    public ProductoResponse actualizar(String id, ProductoRequest solicitud) {
+<span class="fc" id="L58">        Producto producto = buscar(id);</span>
+<span class="fc" id="L59">        String codigo = normalizarCodigo(solicitud.codigo());</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (repositorio.existsByCodigoAndIdNot(codigo, id)) {</span>
+<span class="fc" id="L61">            throw new DatoDuplicadoException(CAMPO_CODIGO, codigo);</span>
+        }
+<span class="fc" id="L63">        aplicarCambios(producto, solicitud, codigo, Instant.now(reloj));</span>
+<span class="fc" id="L64">        return ProductoResponse.desde(repositorio.save(producto));</span>
+    }
+
+    public void eliminar(String id) {
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (!repositorio.existsById(id)) {</span>
+<span class="fc" id="L69">            throw new RecursoNoEncontradoException(RECURSO, id);</span>
+        }
+<span class="fc" id="L71">        repositorio.deleteById(id);</span>
+<span class="fc" id="L72">    }</span>
+
+    private Producto buscar(String id) {
+<span class="fc" id="L75">        return repositorio.findById(id).orElseThrow(() -&gt; new RecursoNoEncontradoException(RECURSO, id));</span>
+    }
+
+    private static void aplicarCambios(Producto producto, ProductoRequest solicitud, String codigo, Instant ahora) {
+<span class="fc" id="L79">        producto.setCodigo(codigo);</span>
+<span class="fc" id="L80">        producto.setNombre(solicitud.nombre().trim());</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        producto.setDescripcion(solicitud.descripcion() == null ? null : solicitud.descripcion().trim());</span>
+<span class="fc" id="L82">        producto.setCategoria(solicitud.categoria().trim());</span>
+<span class="fc" id="L83">        producto.setPrecio(solicitud.precio());</span>
+<span class="fc" id="L84">        producto.setStock(solicitud.stock());</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        producto.setActivo(!Boolean.FALSE.equals(solicitud.activo()));</span>
+<span class="fc" id="L86">        producto.setFechaActualizacion(ahora);</span>
+<span class="fc" id="L87">    }</span>
+
+    private static String normalizarCodigo(String codigo) {
+<span class="fc" id="L90">        return codigo.trim().toUpperCase(Locale.ROOT);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
