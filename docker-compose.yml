@@ -1,0 +1,27 @@
+# Servicios de apoyo para ejecutar y analizar el microservicio en local.
+#   docker compose up -d mongo        -> MongoDB en localhost:27017
+#   docker compose up -d sonarqube    -> SonarQube en http://localhost:9000 (admin / admin la primera vez)
+services:
+  mongo:
+    image: mongo:7
+    container_name: productos-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  sonarqube:
+    image: sonarqube:community
+    container_name: productos-sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes:
+      - sonar-data:/opt/sonarqube/data
+      - sonar-extensions:/opt/sonarqube/extensions
+
+volumes:
+  mongo-data:
+  sonar-data:
+  sonar-extensions:
